@@ -1,0 +1,392 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║          RESONANCE — Instructions for AI App Integration                   ║
+║          How to connect any AI model or app to Resonance                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Resonance turns any AI conversation into a navigable tree structure so you
+can branch, explore, reorganise, and revisit every idea without losing context.
+This file explains how to integrate Resonance with common AI apps and APIs.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.  SUPPORTED AI PROVIDERS — QUICK REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Provider        API Endpoint                                  Key Source
+  ──────────────  ────────────────────────────────────────────  ─────────────────────────
+  openai          https://api.openai.com/v1/chat/completions    platform.openai.com
+  anthropic       https://api.anthropic.com/v1/messages         console.anthropic.com
+  deepseek        https://api.deepseek.com/v1/chat/completions  platform.deepseek.com
+  groq            https://api.groq.com/openai/v1/chat/...       console.groq.com
+  together        https://api.together.xyz/v1/chat/completions  api.together.xyz
+  mistral         https://api.mistral.ai/v1/chat/completions    console.mistral.ai
+  xai (Grok)      https://api.x.ai/v1/chat/completions          x.ai/api
+  ollama (local)  http://localhost:11434/api/chat               (no key required)
+  custom          any OpenAI-compatible endpoint                 (your own)
+
+  All providers except Anthropic and Ollama use OpenAI-compatible format.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.  BASH SCRIPT SETUP (resonance.sh)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Requirements:
+    • bash 4+        (macOS ships bash 3; install bash via Homebrew: brew install bash)
+    • curl           (pre-installed on most systems)
+    • jq             Ubuntu: sudo apt install jq | macOS: brew install jq | Windows: scoop install jq
+
+  First run:
+    chmod +x resonance.sh
+    ./resonance.sh setup        ← interactive wizard: choose provider, paste API key
+
+  Run the interactive REPL:
+    ./resonance.sh
+
+  One-shot query (no REPL):
+    ./resonance.sh ask "Explain quantum entanglement in simple terms"
+
+  Pipe from stdin:
+    echo "What is the best sorting algorithm?" | ./resonance.sh pipe
+
+  Save query to tree:
+    ./resonance.sh ask "Your question here" --save
+
+  Branch from an existing node:
+    ./resonance.sh ask "Follow-up question" --parent abc12345 --save
+
+  Export the current tree to Markdown:
+    ./resonance.sh export my_notes.md
+
+  Show stats:
+    ./resonance.sh stats
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.  PYTHON SCRIPT SETUP (resonance.py)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Requirements:
+    • Python 3.8+    (python3 --version to check)
+    • No pip installs needed — uses stdlib only (urllib, json, uuid)
+
+  Run:
+    python3 resonance.py
+
+  Configure AI inside the REPL:
+    resonance [root] › setup           ← wizard (same as bash)
+    resonance [root] › setprovider openai
+    resonance [root] › setkey sk-...
+    resonance [root] › setmodel gpt-4o
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.  CONFIGURING SPECIFIC AI APPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ── 4a. OpenAI (ChatGPT, GPT-4o, o1) ───────────────────────────────────────
+
+    1. Go to: https://platform.openai.com/api-keys
+    2. Create a new secret key.
+    3. In Resonance:
+         ./resonance.sh setup
+         > Provider: openai
+         > API key: sk-...
+         > Model: gpt-4o-mini       (fast + cheap)
+                  gpt-4o            (best quality)
+                  o1-mini           (reasoning)
+
+    Tip: Use gpt-4o-mini for day-to-day exploration; switch to gpt-4o for
+    complex reasoning branches with: setmodel gpt-4o
+
+
+  ── 4b. Anthropic (Claude) ──────────────────────────────────────────────────
+
+    1. Go to: https://console.anthropic.com/
+    2. Create an API key.
+    3. In Resonance:
+         > Provider: anthropic
+         > API key: sk-ant-...
+         > Model: claude-3-haiku-20240307   (fast)
+                  claude-3-5-sonnet-20241022 (balanced)
+                  claude-opus-4-5            (most capable)
+
+    Note: Anthropic uses a different API format (messages endpoint with
+    x-api-key header). Resonance handles this automatically.
+
+
+  ── 4c. DeepSeek ────────────────────────────────────────────────────────────
+
+    1. Go to: https://platform.deepseek.com/
+    2. Create an API key.
+    3. In Resonance:
+         > Provider: deepseek
+         > API key: sk-...
+         > Model: deepseek-chat       (general)
+                  deepseek-coder      (coding tasks)
+
+    Tip: DeepSeek is extremely cost-effective for long exploratory
+    conversations that branch into many sub-topics.
+
+
+  ── 4d. Groq (Llama, Mixtral — very fast) ───────────────────────────────────
+
+    1. Go to: https://console.groq.com/
+    2. Create an API key.
+    3. In Resonance:
+         > Provider: groq
+         > API key: gsk_...
+         > Model: llama3-70b-8192      (best quality)
+                  llama3-8b-8192       (fastest)
+                  mixtral-8x7b-32768   (long context)
+
+    Tip: Groq is the fastest option available. Great for rapid-fire
+    brainstorming sessions where you branch many ideas quickly.
+
+
+  ── 4e. Ollama (100% local, no API key) ─────────────────────────────────────
+
+    1. Install Ollama: https://ollama.ai/download
+    2. Pull a model:
+         ollama pull llama3
+         ollama pull mistral
+         ollama pull codellama
+    3. Ollama runs automatically on http://localhost:11434
+    4. In Resonance:
+         > Provider: ollama
+         > (no API key needed)
+         > Model: llama3     (or any model you've pulled)
+
+    Tip: For private/sensitive conversations, Ollama keeps everything local.
+    Use 'ollama list' to see available models.
+
+
+  ── 4f. Together AI (100+ open-source models) ───────────────────────────────
+
+    1. Go to: https://api.together.xyz/
+    2. Create an API key.
+    3. In Resonance:
+         > Provider: together
+         > API key: ...
+         > Model: mistralai/Mixtral-8x7B-Instruct-v0.1
+                  meta-llama/Llama-3-70b-chat-hf
+                  NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO
+
+    Tip: Together gives access to fine-tuned specialist models. Branch
+    the same question to multiple models for comparison.
+
+
+  ── 4g. xAI (Grok) ──────────────────────────────────────────────────────────
+
+    1. Go to: https://x.ai/api
+    2. Get an API key from the xAI console.
+    3. In Resonance:
+         > Provider: xai
+         > API key: xai-...
+         > Model: grok-beta
+
+
+  ── 4h. Any Custom / Local OpenAI-Compatible API ────────────────────────────
+
+    Works with: LM Studio, vLLM, Koboldcpp, Jan, LocalAI, llama.cpp server,
+                Text-generation-webui (--api mode), Perplexity, OpenRouter …
+
+    1. Start your local server (see its own documentation).
+    2. In Resonance:
+         > Provider: custom
+         > API key: (leave blank if not required, or enter any placeholder)
+         > Model: (your model name)
+         > URL: http://localhost:1234/v1/chat/completions  ← LM Studio example
+                http://localhost:5000/v1/chat/completions  ← LocalAI example
+                https://openrouter.ai/api/v1/chat/completions  ← OpenRouter
+
+    OpenRouter tip:
+      - API key from https://openrouter.ai/keys
+      - Set URL to: https://openrouter.ai/api/v1/chat/completions
+      - Model format: "anthropic/claude-3-haiku" or "openai/gpt-4o" etc.
+      - This gives you access to dozens of providers through one API key.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.  ENVIRONMENT VARIABLES (alternative to config file)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  You can override config with environment variables — useful for CI/CD,
+  Docker containers, or multiple profiles:
+
+    export PROVIDER=deepseek
+    export API_KEY=sk-...
+    export AI_MODEL=deepseek-chat
+    export RESONANCE_TREE=my_project.json     ← custom tree file
+    export RESONANCE_CONFIG=~/.my_ai_config   ← custom config location
+
+  Or inline:
+    PROVIDER=groq API_KEY=gsk_... AI_MODEL=llama3-70b-8192 ./resonance.sh
+
+  Multiple profiles:
+    RESONANCE_CONFIG=~/.resonance_work    ./resonance.sh   ← work AI
+    RESONANCE_CONFIG=~/.resonance_personal ./resonance.sh  ← personal AI
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.  WORKFLOW TIPS — GETTING THE MOST FROM THE TREE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ① Start broad, branch deep
+    Use 'ask' for your first question. Focus on the AI's node, then 'ask'
+    a follow-up. The tree records each branch so you never lose a thread.
+
+  ② Explore alternatives side-by-side
+    From the same parent node, use 'reply <parent-id> <question>' multiple
+    times with different framings. The tree shows all alternatives.
+
+  ③ Star important discoveries
+    Use 'star <id>' on any breakthrough response. Use 'stars' to review
+    all your best findings at once before exporting.
+
+  ④ Tag by theme
+    Use 'tag <id> research', 'tag <id> todo', 'tag <id> question' to
+    categorise nodes. Then 'search #research' to find them all.
+
+  ⑤ Collapse noise
+    Use 'collapse <id>' to hide explored branches that weren't productive.
+    They stay in the file but don't clutter the display.
+
+  ⑥ Move insights around
+    Use 'move <id> <parent-id>' to reorganise — like Megi's drag-and-drop.
+    Group related follow-ups under a common parent.
+
+  ⑦ Export for sharing
+    Use 'export notes.md' to produce a clean Markdown document of the entire
+    conversation tree for sharing with collaborators.
+
+  ⑧ Work with multiple topics
+    Use 'new Project X' to start a fresh tree. Save it as 'project_x.json'.
+    Switch between trees with 'load project_x.json'.
+
+  ⑨ Integrate in scripts
+    ./resonance.sh ask "Summarise this" --save      ← add to tree + print
+    cat document.txt | ./resonance.sh pipe          ← pipe text to AI
+
+  ⑩ Use notes for annotations
+    Use 'note <text>' to add your own thoughts alongside AI responses —
+    these are stored as 'note' role nodes in the tree.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.  TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  "jq: command not found"
+    → Install jq: sudo apt install jq  OR  brew install jq
+
+  "curl: command not found"
+    → Install curl: sudo apt install curl  OR  brew install curl
+
+  "bash: ./resonance.sh: Permission denied"
+    → chmod +x resonance.sh
+
+  "[HTTP 401]"
+    → Wrong or expired API key. Run 'setup' and re-enter it.
+
+  "[HTTP 429]"
+    → Rate limit exceeded. Wait a moment or switch to a different model.
+
+  "[HTTP 404]"
+    → Wrong endpoint or model name. Check the provider's documentation.
+    → For custom providers, verify the URL with: curl <your-url>/models
+
+  "Ollama not responding"
+    → Make sure Ollama is running: ollama serve
+    → Check it works: curl http://localhost:11434/api/tags
+
+  "macOS: bash version error"
+    → macOS ships with bash 3. Install bash 5:
+        brew install bash
+        /opt/homebrew/bin/bash resonance.sh
+
+  "Tree file is corrupted"
+    → Keep backups. If corrupted: mv resonance_tree.json resonance_tree.bak
+      then start fresh with: ./resonance.sh new
+
+  Python version error
+    → Requires Python 3.8+. Check: python3 --version
+    → The readline import provides history (↑/↓ keys). On Windows,
+      install pyreadline3: pip install pyreadline3
+
+  Windows users
+    → Use WSL2 (Windows Subsystem for Linux) for the .sh script.
+    → The Python (.py) version runs natively on Windows with Python 3.8+.
+    → Git Bash also works for the .sh script.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.  DATA & PRIVACY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • All data is stored locally in resonance_tree.json (your working directory)
+    and resonance_config (your home directory).
+  • No data is sent anywhere except to the AI provider you configure.
+  • For fully private usage, use Ollama (local) — no external API calls.
+  • The config file stores your API key at rest (plain text).
+    Protect it: chmod 600 ~/.resonance_config   (done automatically by setup)
+  • To wipe all data: rm resonance_tree.json ~/.resonance_config
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.  TREE FILE FORMAT (resonance_tree.json)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  The tree is a plain JSON file you can read, edit, or process externally:
+
+  {
+    "name": "My Research Session",
+    "created": "2024-01-15T10:00:00",
+    "root": {
+      "id": "a1b2c3d4",        ← 8-char hex ID
+      "role": "root",           ← "root" | "user" | "ai" | "note"
+      "text": "ROOT",
+      "collapsed": false,
+      "starred": false,
+      "tags": [],
+      "created": "2024-01-15T10:00:00",
+      "children": [
+        {
+          "id": "e5f6g7h8",
+          "role": "user",
+          "text": "What is recursion?",
+          "collapsed": false,
+          "starred": true,
+          "tags": ["important", "cs"],
+          "created": "2024-01-15T10:01:00",
+          "children": [
+            {
+              "id": "i9j0k1l2",
+              "role": "ai",
+              "text": "Recursion is when a function calls itself...",
+              ...
+            }
+          ]
+        }
+      ]
+    }
+  }
+
+  You can use jq to query it directly:
+    jq '[.. | objects | select(.role=="ai")] | length' resonance_tree.json
+    jq '[.. | objects | select(.starred==true) | .text]' resonance_tree.json
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. CREDITS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Resonance is inspired by the Megi browser extension concept:
+  restructuring linear AI conversations into navigable knowledge trees.
+
+  Resonance.sh  — pure bash, no dependencies beyond curl and jq
+  resonance.py  — pure Python 3.8+, zero pip installs
+
+  Both tools share the same JSON tree format and are fully interoperable.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
